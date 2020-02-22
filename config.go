@@ -11,4 +11,6 @@ const (
 	faceImage  = "face.jpg"
 )
 
+const DirectoryPath string = "/home/quangptn/Documents/data_ocr"
+
 const TestCase = "case8"

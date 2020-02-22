@@ -1,6 +1,6 @@
 package main
 
-type VinBDIIDCardRequest struct {
+type VinBDIRequest struct {
 	FrontImageContentBase64 string `json:"id_front_img"`
 	BackImageContentBase64  string `json:"id_back_img"`
 	FaceImageContentBase64  string `json:"face_img"`
@@ -42,7 +42,7 @@ type VinBDICommonImageDataResponse struct {
 	DOE               interface{}   `json:"doe"`
 	DOEPrb            string        `json:"doe_prb"`
 	DOEStatus         string        `json:"doe_status"`
-	IssueDate         float64       `json:"issue_date"`
+	IssueDate         interface{}   `json:"issue_date"`
 	IssueDateProb     string        `json:"issue_date_prob"`
 	IssueDateStatus   string        `json:"issue_date_status"`
 	Religion          string        `json:"religion"`
