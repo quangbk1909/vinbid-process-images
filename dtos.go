@@ -81,3 +81,82 @@ type VinBDIIDCardResponse struct {
 		Errors []VinBDIError `json:"errors"`
 	} `json:"data"`
 }
+
+type GMOIDCardRequest struct {
+	FrontPhotoContent []byte
+	RearPhotoContent  []byte
+}
+
+type GMOIDCardResponse struct {
+	UserId       string `json:"-"`
+	Address      string `json:"address"`
+	Birthday     string `json:"birthday"`
+	Expiry       string `json:"expiry"`
+	FirstName    string `json:"first_name"`
+	FrontFlg     int    `json:"front_flg"`
+	ID           string `json:"id"`
+	ImageROI     string `json:"image_roi"`
+	HomeTown     string `json:"home_town"`
+	IssueAt      string `json:"issue_at"`
+	IssueDate    string `json:"issue_date"`
+	LastName     string `json:"last_name"`
+	LogicCheck   string `json:"logiccheck"`
+	LogicMessage string `json:"logicmessage"`
+	Name         string `json:"name"`
+	ResultCode   int    `json:"result_code"`
+	Sex          string `json:"sex"`
+}
+
+type GMOFaceRequest struct {
+	FacePhotoContent  []byte
+	IDPhotoROIContent []byte
+}
+
+type GMOFaceResponse struct {
+	FaceCompare string `json:"face_compare"`
+	Message     string `json:"message"`
+	ResultCode  int    `json:"result_code"`
+}
+
+type GMOTotalResponse struct {
+	UserId       string `json:"-"`
+	Address      string `json:"address"`
+	Birthday     string `json:"birthday"`
+	Expiry       string `json:"expiry"`
+	FirstName    string `json:"first_name"`
+	FrontFlg     int    `json:"front_flg"`
+	ID           string `json:"id"`
+	ImageROI     string `json:"image_roi"`
+	HomeTown     string `json:"home_town"`
+	IssueAt      string `json:"issue_at"`
+	IssueDate    string `json:"issue_date"`
+	LastName     string `json:"last_name"`
+	LogicCheck   string `json:"logiccheck"`
+	LogicMessage string `json:"logicmessage"`
+	Name         string `json:"name"`
+	Sex          string `json:"sex"`
+	FaceCompare  string `json:"face_compare"`
+	Message      string `json:"message"`
+}
+
+func MapIdCardAndFaceResponseToTotalResponse(idCardResponse GMOIDCardResponse, faceResponse GMOFaceResponse) GMOTotalResponse {
+	return GMOTotalResponse{
+		UserId:      idCardResponse.UserId,
+		Address:     idCardResponse.Address,
+		Birthday:    idCardResponse.Birthday,
+		Expiry:      idCardResponse.Expiry,
+		FirstName:   idCardResponse.FirstName,
+		FrontFlg:    idCardResponse.FrontFlg,
+		ID:          idCardResponse.ID,
+		ImageROI:    idCardResponse.ImageROI,
+		HomeTown:    idCardResponse.HomeTown,
+		IssueAt:     idCardResponse.IssueAt,
+		IssueDate:   idCardResponse.IssueDate,
+		LastName:    idCardResponse.LastName,
+		LogicCheck:  idCardResponse.LogicCheck,
+		Name:        idCardResponse.Name,
+		Sex:         idCardResponse.Sex,
+		FaceCompare: faceResponse.FaceCompare,
+		Message:     faceResponse.Message,
+	}
+}

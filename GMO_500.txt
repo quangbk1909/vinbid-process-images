@@ -1,0 +1,3 @@
+user_id;id_type;id_number;full_name;dob;sex;nationality;home;address;expire_date;issue_date;issue_place;ethnicity;religion;face_score;face_matching
+anhlt;;001094021003;LƯƠNG THẾ ANH;26/12/1994;;; Tiền Hải, Thái Bình;Số 2  C7B, Nghĩa Tân, Cầu Giấy, Hà Nội;26/12/2034;11/3/2008;TP Hà Nội;;;100.000000;true
+anhnhd;;013280467;NGÔI HOÀNG ĐỨC ANH;24/07/1996;;; Hưng Nguyên, Nghệ An; Số 58 Ngách 164/65 Hưng Thừa Vũ T Xuân, Hà Nội;;31/03/2010;TP Hà Nội;;;100.000000;true

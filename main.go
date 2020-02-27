@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -17,7 +18,8 @@ func main() {
 		panic(err)
 	}
 
-	results := make([]VinBDIIDCardResponse, 0)
+	//results := make([]VinBDIIDCardResponse, 0)
+	results := make([]GMOTotalResponse, 0)
 	total := len(testCases)
 
 	for i, testCase := range testCases {
@@ -25,42 +27,74 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		frontImageBase64, err := base64File(testCase, frontImage)
+		//frontImageBase64, err := base64File(testCase, frontImage)
+		//if err != nil {
+		//	panic(err)
+		//}
+		//faceImageBase64, err := base64File(testCase, faceImage)
+		//if err != nil {
+		//	panic(err)
+		//}
+		//rearImageBase64, err := base64File(testCase, rearImage)
+		//if err != nil {
+		//	panic(err)
+		//}
+		frontImage, err := ioutil.ReadFile(DirectoryPath + "/" + testCase + "/" + frontImage)
 		if err != nil {
 			panic(err)
 		}
-		faceImageBase64, err := base64File(testCase, faceImage)
+		rearImage, err := ioutil.ReadFile(DirectoryPath + "/" + testCase + "/" + rearImage)
 		if err != nil {
 			panic(err)
 		}
-		rearImageBase64, err := base64File(testCase, rearImage)
+		faceImage, err := ioutil.ReadFile(DirectoryPath + "/" + testCase + "/" + faceImage)
 		if err != nil {
 			panic(err)
 		}
 
-		request := VinBDIRequest{
-			FrontImageContentBase64: frontImageBase64,
-			BackImageContentBase64:  rearImageBase64,
-			FaceImageContentBase64:  faceImageBase64,
-			IDBackType:              "upload",
-			IDFrontType:             "upload",
+		//request := VinBDIRequest{
+		//	FrontImageContentBase64: frontImageBase64,
+		//	BackImageContentBase64:  rearImageBase64,
+		//	FaceImageContentBase64:  faceImageBase64,
+		//	IDBackType:              "upload",
+		//	IDFrontType:             "upload",
+		//}
+
+		//response, err := ProcessOcr(testCase, request)
+
+		requestID := GMOIDCardRequest{
+			FrontPhotoContent: frontImage,
+			RearPhotoContent:  rearImage,
 		}
 
-		response, err := ProcessOcr(testCase, request)
+		var response2 *GMOFaceResponse
+		response1, err := GMOProcessIDCard(requestID)
 		fmt.Println("process: ", i, "/", total)
 		if err != nil {
 			fmt.Println("front request ---> false\n", testCase, err.Error())
 			continue
 		} else {
-			fmt.Println("front request ---> success\n", testCase, response.Data.BackResponse.Errors, response.Data.Errors)
+			imageRoiByte, err := base64.StdEncoding.DecodeString(response1.ImageROI)
+			requestFace := GMOFaceRequest{
+				FacePhotoContent:  faceImage,
+				IDPhotoROIContent: imageRoiByte,
+			}
+			response2, err = GMOProcessFace(requestFace)
+			if err != nil {
+				fmt.Println("front request ---> false\n", testCase, err.Error())
+				continue
+			} else {
+				fmt.Println("front request ---> success\n", testCase)
+			}
 		}
-		response.UserId = testCase
-		results = append(results, response)
+		response1.UserId = testCase
+		result := MapIdCardAndFaceResponseToTotalResponse(*response1, *response2)
+		results = append(results, result)
 	}
 	finish := time.Now()
 	fmt.Println("Time has passed :", finish.Sub(start))
 
-	writeResultsToCsv(results)
+	writeResultsGMOToCsv(results)
 }
 
 func IOReadDir(parentDir string) ([]string, error) {
@@ -124,7 +158,7 @@ func preProcessImages(testCase string) (err error) {
 	return err
 }
 
-func writeResultsToCsv(results []VinBDIIDCardResponse) {
+func writeResultsVinBDIToCsv(results []VinBDIIDCardResponse) {
 	f, err := os.Create("vinbdi_500.txt")
 	if err != nil {
 		return
@@ -133,7 +167,7 @@ func writeResultsToCsv(results []VinBDIIDCardResponse) {
 
 	dataWriter := bufio.NewWriter(f)
 
-	_, err = fmt.Fprintln(dataWriter,"user_id;id_type;id_number;full_name;dob;sex;nationality;home;address;expire_date;issue_date;issue_place;ethnicity;religion;face_score;face_matching")
+	_, err = fmt.Fprintln(dataWriter, "user_id;id_type;id_number;full_name;dob;sex;nationality;home;address;expire_date;issue_date;issue_place;ethnicity;religion;face_score;face_matching")
 
 	if err != nil {
 		return
@@ -160,7 +194,68 @@ func writeResultsToCsv(results []VinBDIIDCardResponse) {
 			back.Religion,
 			face.MatchingScore,
 			face.IsMatchingFace)
-		_, err := fmt.Fprintln(dataWriter,line)
+		_, err := fmt.Fprintln(dataWriter, line)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+	err = dataWriter.Flush()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+}
+
+func writeResultsGMOToCsv(results []GMOTotalResponse) {
+	f, err := os.Create("GMO_500.txt")
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	dataWriter := bufio.NewWriter(f)
+
+	_, err = fmt.Fprintln(dataWriter, "user_id;id_type;id_number;full_name;dob;sex;nationality;home;address;expire_date;issue_date;issue_place;ethnicity;religion;face_score;face_matching")
+
+	if err != nil {
+		return
+	}
+
+	for _, result := range results {
+		var matchingScore float32
+		var isMatchingFace bool
+		isMatching, err := strconv.Atoi(result.FaceCompare)
+		if err != nil {
+			fmt.Println(err)
+		}
+		if isMatching == 1 {
+			isMatchingFace = true
+			matchingScore = 100
+		} else {
+			isMatchingFace = false
+			matchingScore = 1
+		}
+
+		line := fmt.Sprintf("%s;%s;%s;%s;%s;%s;%s;%s;%s;%v;%v;%s;%s;%s;%f;%t",
+			result.UserId,
+			"",
+			result.ID,
+			result.Name,
+			result.Birthday,
+			result.Sex,
+			"",
+			result.HomeTown,
+			result.Address,
+			result.Expiry,
+			result.IssueDate,
+			result.IssueAt,
+			"",
+			"",
+			matchingScore,
+			isMatchingFace)
+		_, err = fmt.Fprintln(dataWriter, line)
 		if err != nil {
 			fmt.Println(err)
 			return
