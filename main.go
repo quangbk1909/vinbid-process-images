@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -15,7 +16,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	for _, testCase := range testCases {
+
+	results := make([]VinBDIIDCardResponse, 0)
+	total := len(testCases)
+
+	for i, testCase := range testCases {
 		err = preProcessImages(testCase)
 		if err != nil {
 			panic(err)
@@ -42,14 +47,20 @@ func main() {
 		}
 
 		response, err := ProcessOcr(testCase, request)
+		fmt.Println("process: ", i, "/", total)
 		if err != nil {
 			fmt.Println("front request ---> false\n", testCase, err.Error())
+			continue
 		} else {
 			fmt.Println("front request ---> success\n", testCase, response.Data.BackResponse.Errors, response.Data.Errors)
 		}
+		response.UserId = testCase
+		results = append(results, response)
 	}
 	finish := time.Now()
 	fmt.Println("Time has passed :", finish.Sub(start))
+
+	writeResultsToCsv(results)
 }
 
 func IOReadDir(parentDir string) ([]string, error) {
@@ -110,5 +121,55 @@ func preProcessImages(testCase string) (err error) {
 			}
 		}
 	}
-	return
+	return err
+}
+
+func writeResultsToCsv(results []VinBDIIDCardResponse) {
+	f, err := os.Create("vinbdi_500.txt")
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	dataWriter := bufio.NewWriter(f)
+
+	_, err = fmt.Fprintln(dataWriter,"user_id;id_type;id_number;full_name;dob;sex;nationality;home;address;expire_date;issue_date;issue_place;ethnicity;religion;face_score;face_matching")
+
+	if err != nil {
+		return
+	}
+
+	for _, result := range results {
+		front := result.Data.FrontResponse
+		back := result.Data.BackResponse
+		face := result.Data.Face
+		line := fmt.Sprintf("%s;%s;%s;%s;%s;%s;%s;%s;%s;%v;%v;%s;%s;%s;%f;%t",
+			result.UserId,
+			front.Type,
+			front.ID,
+			front.Name,
+			front.DOB,
+			front.Sex,
+			front.Nationality,
+			front.Home,
+			front.Address,
+			front.DOE,
+			back.IssueDate,
+			back.IssuePlace,
+			back.Ethnicity,
+			back.Religion,
+			face.MatchingScore,
+			face.IsMatchingFace)
+		_, err := fmt.Fprintln(dataWriter,line)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+	err = dataWriter.Flush()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 }

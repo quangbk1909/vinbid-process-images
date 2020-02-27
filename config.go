@@ -1,9 +1,7 @@
 package main
 
 const (
-	vinDBIURL             = "http://127.0.0.1:8555/idcard"
-	vinDBIBackURL         = "http://127.0.0.1:9696/idcard/back"
-	vinDBIFaceMatchingURL = "http://127.0.0.1:9696//idcard/face-matching"
+	vinDBIURL             = "http://127.0.0.1:9696/idcard"
 )
 const (
 	frontImage = "front.jpg"
@@ -11,6 +9,5 @@ const (
 	faceImage  = "face.jpg"
 )
 
-const DirectoryPath string = "/home/quangptn/Documents/data_ocr"
+const DirectoryPath string = "../data_first_500"
 
-const TestCase = "case8"

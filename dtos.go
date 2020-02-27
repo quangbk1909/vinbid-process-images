@@ -9,7 +9,7 @@ type VinBDIRequest struct {
 }
 
 type VinBDIError struct {
-	code    int64  `json:"code"`
+	Code    int64  `json:"code"`
 	Message string `json:"message"`
 }
 
@@ -45,6 +45,9 @@ type VinBDICommonImageDataResponse struct {
 	IssueDate         interface{}   `json:"issue_date"`
 	IssueDateProb     string        `json:"issue_date_prob"`
 	IssueDateStatus   string        `json:"issue_date_status"`
+	IssuePlace        string        `json:"issue_loc"`
+	IssuePlaceProb    string        `json:"issue_loc_prob"`
+	IssuePlaceStatus  string        `json:"issue_loc_status"`
 	Religion          string        `json:"religion"`
 	ReligionProb      string        `json:"religion_prob"`
 	ReligionStatus    string        `json:"religion_status"`
@@ -56,8 +59,9 @@ type VinBDICommonImageDataResponse struct {
 }
 
 type VinBDIIDCardResponse struct {
+	UserId  string `json:"-"`
 	Message string `json:"message"`
-	Code    int64  `json:"code"`
+	Code    int64  `json:"Code"`
 	Data    struct {
 		FrontResponse VinBDICommonImageDataResponse `json:"id_front"`
 		BackResponse  VinBDICommonImageDataResponse `json:"id_back"`
