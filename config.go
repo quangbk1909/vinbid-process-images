@@ -2,8 +2,8 @@ package main
 
 const (
 	vinDBIURL           = "http://127.0.0.1:9696/idcard"
-	GMORequestIdCardUrl = "http://127.0.0.1:9696/idcard"
-	GMORequestFaceUrl   = "http://127.0.0.1:9696/face"
+	GMORequestIdCardUrl = "https://api-payment.int.vinid.dev/ekyc-gmo/idcard/v1/recognition"
+	GMORequestFaceUrl   = "https://api-payment.int.vinid.dev/ekyc-gmo/face/v1/recognition"
 	APIKeyGMO           = "a08eb42a-4a57-449b-84f4-1f67219f2679"
 )
 const (

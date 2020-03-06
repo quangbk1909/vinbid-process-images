@@ -19,7 +19,7 @@ func main() {
 	}
 
 	//results := make([]VinBDIIDCardResponse, 0)
-	results := make([]GMOTotalResponse, 0)
+	results := make([]GMOOCRResult, 0)
 	total := len(testCases)
 
 	for i, testCase := range testCases {
@@ -67,29 +67,30 @@ func main() {
 			RearPhotoContent:  rearImage,
 		}
 
-		var response2 *GMOFaceResponse
-		response1, err := GMOProcessIDCard(requestID)
+		var responseFace *GMOFaceResponse
+		responseIDCard, err := GMOProcessIDCard(requestID)
 		fmt.Println("process: ", i, "/", total)
 		if err != nil {
-			fmt.Println("front request ---> false\n", testCase, err.Error())
+			fmt.Println("id card request ---> false\n", testCase, err.Error())
 			continue
 		} else {
-			imageRoiByte, err := base64.StdEncoding.DecodeString(response1.ImageROI)
+			imageRoiByte, err := base64.StdEncoding.DecodeString(responseIDCard.ImageROI)
 			requestFace := GMOFaceRequest{
 				FacePhotoContent:  faceImage,
 				IDPhotoROIContent: imageRoiByte,
 			}
-			response2, err = GMOProcessFace(requestFace)
+			responseFace, err = GMOProcessFace(requestFace)
 			if err != nil {
-				fmt.Println("front request ---> false\n", testCase, err.Error())
-				continue
+				fmt.Println("face request ---> false\n", testCase, err.Error())
 			} else {
-				fmt.Println("front request ---> success\n", testCase)
+				fmt.Println("ocr request ---> success\n", testCase)
 			}
 		}
-		response1.UserId = testCase
-		result := MapIdCardAndFaceResponseToTotalResponse(*response1, *response2)
-		results = append(results, result)
+		responseIDCard.UserId = testCase
+		gmoOcrResult, _ := extractOCRResult(responseIDCard, "")
+		gmoOcrResult.FaceCompare = responseFace.FaceCompare
+		gmoOcrResult.FaceMessage = responseFace.Message
+		results = append(results, gmoOcrResult)
 	}
 	finish := time.Now()
 	fmt.Println("Time has passed :", finish.Sub(start))
@@ -208,7 +209,7 @@ func writeResultsVinBDIToCsv(results []VinBDIIDCardResponse) {
 
 }
 
-func writeResultsGMOToCsv(results []GMOTotalResponse) {
+func writeResultsGMOToCsv(results []GMOOCRResult) {
 	f, err := os.Create("GMO_500.txt")
 	if err != nil {
 		return
@@ -217,7 +218,35 @@ func writeResultsGMOToCsv(results []GMOTotalResponse) {
 
 	dataWriter := bufio.NewWriter(f)
 
-	_, err = fmt.Fprintln(dataWriter, "user_id;id_type;id_number;full_name;dob;sex;nationality;home;address;expire_date;issue_date;issue_place;ethnicity;religion;face_score;face_matching")
+	_, err = fmt.Fprintln(dataWriter, "user_id;"+
+		"id_type;"+
+		"id_number;"+
+		"id_number_score;"+
+		"full_name;"+
+		"full_name_score;"+
+		"dob;"+
+		"dob_score;"+
+		"dob_val;"+
+		"gender;"+
+		"gender_score;"+
+		"nationality;"+
+		"nationality_score;"+
+		"hometown_address;"+
+		"hometown_address_score;"+
+		"permanent_address;"+
+		"permanent_address_score;"+
+		"issue_place;"+
+		"issue_place_score;"+
+		"issue_date;"+
+		"issue_date_score;"+
+		"issue_date_val;"+
+		"expire_date;"+
+		"expire_date_score;"+
+		"expire_date_val;"+
+		"ethnicity;"+
+		"religion;"+
+		"face_score;"+
+		"face_matching")
 
 	if err != nil {
 		return
@@ -238,19 +267,32 @@ func writeResultsGMOToCsv(results []GMOTotalResponse) {
 			matchingScore = 1
 		}
 
-		line := fmt.Sprintf("%s;%s;%s;%s;%s;%s;%s;%s;%s;%v;%v;%s;%s;%s;%f;%t",
+		line := fmt.Sprintf("%s;%s;%s;%f;%s;%f;%s;%f;%v;%s;%f;%s;%f;%s;%f;%s;%f;%s;%f;%s;%f;%v;%s;%f;%v;%s;%s;%f;%t",
 			result.UserId,
 			"",
-			result.ID,
-			result.Name,
-			result.Birthday,
-			result.Sex,
-			"",
-			result.HomeTown,
-			result.Address,
-			result.Expiry,
+			result.IdentityNumber,
+			result.IdentityNumberScore,
+			result.FullName,
+			result.FullNameScore,
+			result.DOB,
+			result.DOBScore,
+			result.DOBVal,
+			result.Gender,
+			result.GenderScore,
+			result.Nationality,
+			result.NationalityScore,
+			result.HometownAddress,
+			result.HometownAddressScore,
+			result.PermanentAddress,
+			result.PermanentAddressScore,
+			result.IssuePlace,
+			result.IssuePlaceScore,
 			result.IssueDate,
-			result.IssueAt,
+			result.IssueDateScore,
+			result.IssueDateVal,
+			result.ExpireDate,
+			result.ExpireDateScore,
+			result.ExpireDateVal,
 			"",
 			"",
 			matchingScore,
